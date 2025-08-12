@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: pero_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pero_db
+      POSTGRES_USER: pero_user
+      POSTGRES_PASSWORD: pero_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - pero_network
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pero_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_USER: admin
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "8080:80"
+    depends_on:
+      - postgres
+    networks:
+      - pero_network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  pero_network:
+    driver: bridge
