@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -109,7 +110,14 @@ export class UsersService {
     updatePasswordDto: UpdatePasswordDto,
   ): Promise<void> {
     const user = await this.findOne(id);
-    user.password = await bcrypt.hash(updatePasswordDto.password, 10);
+    const isPasswordValid = await bcrypt.compare(
+      updatePasswordDto.oldPassword,
+      user.password,
+    );
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid old password');
+    }
+    user.password = await bcrypt.hash(updatePasswordDto.newPassword, 10);
     await this.usersRepository.save(user);
   }
 
