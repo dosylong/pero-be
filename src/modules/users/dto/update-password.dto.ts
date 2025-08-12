@@ -1,17 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, MinLength } from 'class-validator';
 
-export class UpdateUserDto {
+export class UpdatePasswordDto {
   @ApiProperty({ description: 'User password', minLength: 8 })
   @IsString()
   @MinLength(8)
   password: string;
-
-  @ApiProperty({ description: 'User first name' })
-  @IsString()
-  firstName: string;
-
-  @ApiProperty({ description: 'User last name' })
-  @IsString()
-  lastName: string;
 }

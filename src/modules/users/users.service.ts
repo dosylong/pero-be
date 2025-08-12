@@ -9,6 +9,7 @@ import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcryptjs';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @Injectable()
 export class UsersService {
@@ -39,12 +40,34 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
-  async findAll(): Promise<User[]> {
-    return this.usersRepository.find();
+  async findAll(): Promise<
+    Omit<User, 'password' | 'refreshTokenHash' | 'createdAt' | 'updatedAt'>[]
+  > {
+    return this.usersRepository.find({
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+      },
+    });
   }
 
   async findOne(id: string): Promise<User> {
     const user = await this.usersRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
+  }
+
+  async findOneWithSensitiveFields(id: string): Promise<User> {
+    const user = await this.usersRepository
+      .createQueryBuilder('user')
+      .addSelect('user.refreshTokenHash')
+      .where('user.id = :id', { id })
+      .getOne();
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
@@ -65,6 +88,29 @@ export class UsersService {
 
     Object.assign(user, updateUserDto);
     return this.usersRepository.save(user);
+  }
+
+  async setRefreshTokenHash(
+    userId: string,
+    refreshTokenHash: string,
+  ): Promise<void> {
+    await this.usersRepository.update({ id: userId }, { refreshTokenHash });
+  }
+
+  async clearRefreshToken(userId: string): Promise<void> {
+    await this.usersRepository.update(
+      { id: userId },
+      { refreshTokenHash: null },
+    );
+  }
+
+  async updatePassword(
+    id: string,
+    updatePasswordDto: UpdatePasswordDto,
+  ): Promise<void> {
+    const user = await this.findOne(id);
+    user.password = await bcrypt.hash(updatePasswordDto.password, 10);
+    await this.usersRepository.save(user);
   }
 
   async remove(id: string): Promise<void> {
