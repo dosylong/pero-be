@@ -1,4 +1,4 @@
-# Getting Started with Pero Backend
+# Getting Started with Pero Backend API
 
 ## 🎯 What We've Set Up
 
